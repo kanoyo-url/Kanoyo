@@ -1310,7 +1310,7 @@ with gr.Blocks(theme='ParityError/Interstellar', title="Kanoyo (RVC WebUI)") as 
                     )
                     total_epoch11 = gr.Slider(
                         minimum=1,
-                        maximum=100000,
+                        maximum=12500,
                         step=1,
                         label=i18n("总训练轮数total_epoch"),
                         value=20,
