@@ -15,6 +15,7 @@ from infer.lib.train.process_ckpt import (
 )
 from i18n.i18n import I18nAuto
 from configs.config import Config
+from urllib.parse import unquote, urlencode, parse_qs, urlparse
 from sklearn.cluster import MiniBatchKMeans
 import torch
 import numpy as np
@@ -31,6 +32,8 @@ import warnings
 import traceback
 import threading
 import shutil
+import requests
+from mega import Mega
 import logging
 
 
@@ -188,6 +191,46 @@ def download_from_url(url, model):
         elif "mega.nz" in url:
             m = Mega()
             m.download_url(url, './zips')
+        elif "disk.yandex.ru" in url:
+            base_url = 'https://cloud-api.yandex.net/v1/disk/public/resources/download?'
+            public_key = url  
+            final_url = base_url + urlencode(dict(public_key=public_key))
+            response = requests.get(final_url)
+            download_url = response.json()['href']
+            download_response = requests.get(download_url)
+            if download_response.status_code == 200:
+                filename = parse_qs(urlparse(unquote(download_url)).query).get('filename', [''])[0]
+                if filename: 
+                    os.chdir("zips")
+                    with open(filename, 'wb') as f:   
+                        f.write(download_response.content)
+            else:
+                print("Failed to get filename from URL.")
+                return None
+        elif "pixeldrain.com" in url:
+            try:
+                file_id = url.split("pixeldrain.com/u/")[1]
+                os.chdir("zips")
+                print(file_id)
+                response = requests.get(f"https://pixeldrain.com/api/file/{file_id}")
+                if response.status_code == 200:
+                    file_name = (
+                        response.headers.get("Content-Disposition")
+                        .split("filename=")[-1]
+                        .strip('";')
+                    )
+                    os.makedirs("zips", exist_ok=True)
+                    with open(os.path.join("zips", file_name), "wb") as newfile:
+                        newfile.write(response.content)
+                        os.chdir("./")
+                        return "downloaded"
+                else:
+                    os.chdir("./")
+                    return None
+            except Exception as e:
+                print(e)
+                os.chdir("./")
+                return None
         else:
             subprocess.run(["wget", url, "-O", zipfile_path])
         for filename in os.listdir("./zips"):
@@ -203,7 +246,7 @@ def download_from_url(url, model):
                     os.mkdir(f'./logs/{model}')
                     shutil.copy2(file_path,f'./logs/{model}')
                 elif "G_" not in file and "D_" not in file and file.endswith(".pth"):
-                    shutil.copy(file_path,f'./weights/{model}.pth')
+                    shutil.copy(file_path,f'./assets/weights/{model}.pth')
         shutil.rmtree("zips")
         shutil.rmtree("unzips")
         return "Model downloaded, you can go back to the inference page!"
