@@ -15,6 +15,7 @@ from infer.lib.train.process_ckpt import (
 )
 from i18n.i18n import I18nAuto
 from configs.config import Config
+from download import download_tab
 from sklearn.cluster import MiniBatchKMeans
 import torch
 import numpy as np
@@ -25,6 +26,7 @@ import pathlib
 import json
 from time import sleep
 from subprocess import Popen
+import subprocess
 from random import shuffle
 import warnings
 import traceback
@@ -204,6 +206,16 @@ def if_done_multi(done, ps):
             break
     done[0] = True
 
+# Download
+def run_download_script(model_link):
+    download_script_path = os.path.join("tools", "model_download.py")
+    command = [
+        "python",
+        download_script_path,
+        model_link,
+    ]
+    subprocess.run(command)
+    return f"Model downloaded successfully."
 
 def preprocess_dataset(trainset_dir, exp_dir, sr, n_p):
     sr = sr_dict[sr]
@@ -1592,18 +1604,8 @@ with gr.Blocks(title="Kanoyo (RVC WebUI)") as app:
                 export_onnx, [ckpt_dir, onnx_dir], infoOnnx, api_name="export_onnx"
             )
 
-        tab_faq = i18n("常见问题解答")
-        with gr.TabItem(tab_faq):
-            try:
-                if tab_faq == "常见问题解答":
-                    with open("docs/cn/faq.md", "r", encoding="utf8") as f:
-                        info = f.read()
-                else:
-                    with open("docs/en/faq_en.md", "r", encoding="utf8") as f:
-                        info = f.read()
-                gr.Markdown(value=info)
-            except:
-                gr.Markdown(traceback.format_exc())
+    with gr.Tab(i18n("Download")):
+        download_tab()
 
     if config.iscolab:
         app.queue(concurrency_count=511, max_size=1022).launch(share=True)
