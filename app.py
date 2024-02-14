@@ -168,6 +168,48 @@ def change_choices():
 def clean():
     return {"value": "", "__type__": "update"}
 
+def download_from_url(url, model):
+    if url == '':
+        return "URL cannot be left empty."
+    if model =='':
+        return "You need to name your model. For example: My-Model"
+    url = url.strip()
+    zip_dirs = ["zips", "unzips"]
+    for directory in zip_dirs:
+        if os.path.exists(directory):
+            shutil.rmtree(directory)
+    os.makedirs("zips", exist_ok=True)
+    os.makedirs("unzips", exist_ok=True)
+    zipfile = model + '.zip'
+    zipfile_path = './zips/' + zipfile
+    try:
+        if "drive.google.com" in url:
+            subprocess.run(["gdown", url, "--fuzzy", "-O", zipfile_path])
+        elif "mega.nz" in url:
+            m = Mega()
+            m.download_url(url, './zips')
+        else:
+            subprocess.run(["wget", url, "-O", zipfile_path])
+        for filename in os.listdir("./zips"):
+            if filename.endswith(".zip"):
+                zipfile_path = os.path.join("./zips/",filename)
+                shutil.unpack_archive(zipfile_path, "./unzips", 'zip')
+            else:
+                return "No zipfile found."
+        for root, dirs, files in os.walk('./unzips'):
+            for file in files:
+                file_path = os.path.join(root, file)
+                if file.endswith(".index"):
+                    os.mkdir(f'./logs/{model}')
+                    shutil.copy2(file_path,f'./logs/{model}')
+                elif "G_" not in file and "D_" not in file and file.endswith(".pth"):
+                    shutil.copy(file_path,f'./weights/{model}.pth')
+        shutil.rmtree("zips")
+        shutil.rmtree("unzips")
+        return "Model downloaded, you can go back to the inference page!"
+    except:
+        return "ERROR - The download failed. Check if the link is valid."
+
 
 def export_onnx(ModelPath, ExportedPath):
     from infer.modules.onnx.export import export_onnx as eo
@@ -1602,6 +1644,17 @@ with gr.Blocks(title="Kanoyo (RVC WebUI)") as app:
             butOnnx.click(
                 export_onnx, [ckpt_dir, onnx_dir], infoOnnx, api_name="export_onnx"
             )
+
+        with gr.TabItem("Download Voice Models"):
+            with gr.Row():
+                url=gr.Textbox(label="Huggingface Link:")
+            with gr.Row():
+                model = gr.Textbox(label="Name of the model (without spaces):")
+                download_button=gr.Button("Download")
+            with gr.Row():
+                status_bar=gr.Textbox(label="Download Status")
+                download_button.click(fn=download_from_url, inputs=[url, model], outputs=[status_bar])
+            
 
     if config.iscolab:
         app.queue(concurrency_count=511, max_size=1022).launch(share=True)
