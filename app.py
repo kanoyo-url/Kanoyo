@@ -15,7 +15,6 @@ from infer.lib.train.process_ckpt import (
 )
 from i18n.i18n import I18nAuto
 from configs.config import Config
-from urllib.parse import unquote, urlencode, parse_qs, urlparse
 from sklearn.cluster import MiniBatchKMeans
 import torch
 import numpy as np
@@ -170,88 +169,6 @@ def change_choices():
 
 def clean():
     return {"value": "", "__type__": "update"}
-
-def download_from_url(url, model):
-    if url == '':
-        return "URL cannot be left empty."
-    if model =='':
-        return "You need to name your model. For example: My-Model"
-    url = url.strip()
-    zip_dirs = ["zips", "unzips"]
-    for directory in zip_dirs:
-        if os.path.exists(directory):
-            shutil.rmtree(directory)
-    os.makedirs("zips", exist_ok=True)
-    os.makedirs("unzips", exist_ok=True)
-    zipfile = model + '.zip'
-    zipfile_path = './zips/' + zipfile
-    try:
-        if "drive.google.com" in url:
-            subprocess.run(["gdown", url, "--fuzzy", "-O", zipfile_path])
-        elif "mega.nz" in url:
-            m = Mega()
-            m.download_url(url, './zips')
-        elif "disk.yandex.ru" in url:
-            base_url = 'https://cloud-api.yandex.net/v1/disk/public/resources/download?'
-            public_key = url  
-            final_url = base_url + urlencode(dict(public_key=public_key))
-            response = requests.get(final_url)
-            download_url = response.json()['href']
-            download_response = requests.get(download_url)
-            if download_response.status_code == 200:
-                filename = parse_qs(urlparse(unquote(download_url)).query).get('filename', [''])[0]
-                if filename: 
-                    os.chdir("zips")
-                    with open(filename, 'wb') as f:   
-                        f.write(download_response.content)
-            else:
-                print("Failed to get filename from URL.")
-                return None
-        elif "pixeldrain.com" in url:
-            try:
-                file_id = url.split("pixeldrain.com/u/")[1]
-                os.chdir("zips")
-                print(file_id)
-                response = requests.get(f"https://pixeldrain.com/api/file/{file_id}")
-                if response.status_code == 200:
-                    file_name = (
-                        response.headers.get("Content-Disposition")
-                        .split("filename=")[-1]
-                        .strip('";')
-                    )
-                    os.makedirs("zips", exist_ok=True)
-                    with open(os.path.join("zips", file_name), "wb") as newfile:
-                        newfile.write(response.content)
-                        os.chdir("./")
-                        return "downloaded"
-                else:
-                    os.chdir("./")
-                    return None
-            except Exception as e:
-                print(e)
-                os.chdir("./")
-                return None
-        else:
-            subprocess.run(["wget", url, "-O", zipfile_path])
-        for filename in os.listdir("./zips"):
-            if filename.endswith(".zip"):
-                zipfile_path = os.path.join("./zips/",filename)
-                shutil.unpack_archive(zipfile_path, "./unzips", 'zip')
-            else:
-                return "No zipfile found."
-        for root, dirs, files in os.walk('./unzips'):
-            for file in files:
-                file_path = os.path.join(root, file)
-                if file.endswith(".index"):
-                    os.mkdir(f'./logs/{model}')
-                    shutil.copy2(file_path,f'./logs/{model}')
-                elif "G_" not in file and "D_" not in file and file.endswith(".pth"):
-                    shutil.copy(file_path,f'./assets/weights/{model}.pth')
-        shutil.rmtree("zips")
-        shutil.rmtree("unzips")
-        return "Model downloaded, you can go back to the inference page!"
-    except:
-        return "ERROR - The download failed. Check if the link is valid."
 
 
 def export_onnx(ModelPath, ExportedPath):
@@ -1687,16 +1604,6 @@ with gr.Blocks(theme='ParityError/Interstellar', title="Kanoyo (RVC WebUI)") as 
             butOnnx.click(
                 export_onnx, [ckpt_dir, onnx_dir], infoOnnx, api_name="export_onnx"
             )
-
-        with gr.TabItem("Download Voice Models"):
-            with gr.Row():
-                url=gr.Textbox(label="Huggingface Link:")
-            with gr.Row():
-                model = gr.Textbox(label="Name of the model (without spaces):")
-                download_button=gr.Button("Download")
-            with gr.Row():
-                status_bar=gr.Textbox(label="Download Status")
-                download_button.click(fn=download_from_url, inputs=[url, model], outputs=[status_bar])
             
 
     if config.iscolab:
