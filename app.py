@@ -858,7 +858,7 @@ with gr.Blocks(theme='ParityError/Interstellar', title="Kanoyo (RVC WebUI)") as 
                             label=i18n("Choose Your Audio"),
                             value=i18n("./audios/someguy.mp3")
                             )
-                            refresh_button2 = gr.Button("Refresh", variant="primary", size='sm')
+                            refresh_button2 = gr.Button("Обновить", variant="primary", size='sm')
                             refresh_button2.click(fn=change_choices2, inputs=[], outputs=[input_audio0])
 
                             file_index1 = gr.Textbox(
