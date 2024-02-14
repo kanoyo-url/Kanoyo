@@ -1610,6 +1610,7 @@ with gr.Blocks(theme='ParityError/Interstellar', title="Kanoyo (RVC WebUI)") as 
         app.queue(concurrency_count=511, max_size=1022).launch(share=True)
     else:
         app.queue(concurrency_count=511, max_size=1022).launch(
+            share=False,
             server_name="0.0.0.0",
             inbrowser=not config.noautoopen,
             server_port=config.listen_port,
