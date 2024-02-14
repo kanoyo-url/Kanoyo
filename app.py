@@ -1302,15 +1302,15 @@ with gr.Blocks(theme='ParityError/Interstellar', title="Kanoyo (RVC WebUI)") as 
                 with gr.Row():
                     save_epoch10 = gr.Slider(
                         minimum=1,
-                        maximum=50,
+                        maximum=500,
                         step=1,
                         label=i18n("保存频率save_every_epoch"),
                         value=5,
                         interactive=True,
                     )
                     total_epoch11 = gr.Slider(
-                        minimum=2,
-                        maximum=1000,
+                        minimum=1,
+                        maximum=100000,
                         step=1,
                         label=i18n("总训练轮数total_epoch"),
                         value=20,
