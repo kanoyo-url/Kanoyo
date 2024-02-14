@@ -15,7 +15,6 @@ from infer.lib.train.process_ckpt import (
 )
 from i18n.i18n import I18nAuto
 from configs.config import Config
-from download import download_tab
 from sklearn.cluster import MiniBatchKMeans
 import torch
 import numpy as np
@@ -1603,9 +1602,6 @@ with gr.Blocks(title="Kanoyo (RVC WebUI)") as app:
             butOnnx.click(
                 export_onnx, [ckpt_dir, onnx_dir], infoOnnx, api_name="export_onnx"
             )
-
-    with gr.Tab(i18n("Download")):
-        download_tab()
 
     if config.iscolab:
         app.queue(concurrency_count=511, max_size=1022).launch(share=True)
