@@ -450,6 +450,27 @@ def change_f0(if_f0_3, sr2, version19):  # f0method8,pretrained_G14,pretrained_D
         *get_pretrained_models(path_str, "f0" if if_f0_3 == True else "", sr2),
     )
 
+def save_to_wav2(dropbox):
+    file_path=dropbox.name
+    shutil.move(file_path,'./audios')
+    return os.path.join('./audios',os.path.basename(file_path))
+
+def change_choices2():
+    audio_files=[]
+    for filename in os.listdir("./audios"):
+        if filename.endswith(('.wav','.mp3')):
+            audio_files.append(os.path.join('./audios',filename))
+    return {"choices": sorted(audio_files), "__type__": "update"}
+
+def save_to_wav(record_button):
+    if record_button is None:
+        pass
+    else:
+        path_to_file=record_button
+        new_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")+'.wav'
+        new_path='./audios/'+new_name
+        shutil.move(path_to_file,new_path)
+        return new_path
 
 # but3.click(click_train,[exp_dir1,sr2,if_f0_3,save_epoch10,total_epoch11,batch_size12,if_save_latest13,pretrained_G14,pretrained_D15,gpus16])
 def click_train(
@@ -778,8 +799,8 @@ def change_f0_method(f0method8):
     return {"visible": visible, "__type__": "update"}
 
 
-with gr.Blocks(title="RVC WebUI") as app:
-    gr.Markdown("## RVC WebUI")
+with gr.Blocks(title="Kanoyo (RVC WebUI)") as app:
+    gr.Markdown("## Kanoyo (RVC WebUI)")
     gr.Markdown(
         value=i18n(
             "本软件以MIT协议开源, 作者不对软件具备任何控制力, 使用软件者、传播软件导出的声音者自负全责. <br>如不认可该条款, 则不能使用或引用软件包内任何代码和文件. 详见根目录<b>LICENSE</b>."
@@ -789,11 +810,11 @@ with gr.Blocks(title="RVC WebUI") as app:
         with gr.TabItem(i18n("模型推理")):
             with gr.Row():
                 sid0 = gr.Dropdown(label=i18n("推理音色"), choices=sorted(names))
-                with gr.Column():
-                    refresh_button = gr.Button(
-                        i18n("刷新音色列表和索引路径"), variant="primary"
-                    )
-                    clean_button = gr.Button(i18n("卸载音色省显存"), variant="primary")
+                file_index2 = gr.Dropdown(
+                label=i18n("自动检测index路径,下拉式选择(dropdown)"),
+                choices=sorted(index_paths),
+                interactive=True,
+                )
                 spk_item = gr.Slider(
                     minimum=0,
                     maximum=2333,
@@ -803,9 +824,14 @@ with gr.Blocks(title="RVC WebUI") as app:
                     visible=False,
                     interactive=True,
                 )
+                refresh_button = gr.Button(
+                        i18n("刷新音色列表和索引路径"), variant="primary"
+                )
+                clean_button = gr.Button(i18n("卸载音色省显存"), variant="primary")
                 clean_button.click(
                     fn=clean, inputs=[], outputs=[sid0], api_name="infer_clean"
                 )
+
             with gr.TabItem(i18n("单次推理")):
                 with gr.Group():
                     with gr.Row():
@@ -814,22 +840,19 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 label=i18n("变调(整数, 半音数量, 升八度12降八度-12)"),
                                 value=0,
                             )
-                            input_audio0 = gr.Textbox(
-                                label=i18n(
-                                    "输入待处理音频文件路径(默认是正确格式示例)"
-                                ),
-                                placeholder="C:\\Users\\Desktop\\audio_example.wav",
+                            dropbox = gr.File(label="Drop your audio here & hit the Reload button.")
+                            input_audio0 = gr.Dropdown(
+                            label=i18n("Choose Your Audio"),
+                            value=i18n("./audios/someguy.mp3")
                             )
+                            refresh_button2 = gr.Button("Refresh", variant="primary", size='sm')
+                            refresh_button2.click(fn=change_choices2, inputs=[], outputs=[input_audio0])
+
                             file_index1 = gr.Textbox(
                                 label=i18n(
                                     "特征检索库文件路径,为空则使用下拉的选择结果"
                                 ),
                                 placeholder="C:\\Users\\Desktop\\model_example.index",
-                                interactive=True,
-                            )
-                            file_index2 = gr.Dropdown(
-                                label=i18n("自动检测index路径,下拉式选择(dropdown)"),
-                                choices=sorted(index_paths),
                                 interactive=True,
                             )
                             f0method0 = gr.Radio(
@@ -844,6 +867,8 @@ with gr.Blocks(title="RVC WebUI") as app:
                                 value="rmvpe",
                                 interactive=True,
                             )
+                            dropbox.upload(fn=save_to_wav2, inputs=[dropbox], outputs=[input_audio0])
+                            dropbox.upload(fn=change_choices2, inputs=[], outputs=[input_audio0])
 
                         with gr.Column():
                             resample_sr0 = gr.Slider(
@@ -1182,9 +1207,9 @@ with gr.Blocks(title="RVC WebUI") as app:
                     )
                 )
                 with gr.Row():
-                    trainset_dir4 = gr.Textbox(
+                    trainset_dir4 = gr.Dropdown(
                         label=i18n("输入训练文件夹路径"),
-                        value=i18n("E:\\语音音频+标注\\米津玄师\\src"),
+                        value=i18n("datasets/"),
                     )
                     spk_id5 = gr.Slider(
                         minimum=0,
