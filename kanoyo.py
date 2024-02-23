@@ -1188,7 +1188,7 @@ with gr.Blocks(theme='NoCrypt/miku', title="Kanoyo (RVC WebUI)") as app:
                 exp_dir1 = gr.Textbox(label=i18n("输入实验名"), value="mi-test")
                 sr2 = gr.Radio(
                     label=i18n("目标采样率"),
-                    choices=["40k", "48k"],
+                    choices=["40k"],
                     value="40k",
                     interactive=True,
                 )
@@ -1200,7 +1200,7 @@ with gr.Blocks(theme='NoCrypt/miku', title="Kanoyo (RVC WebUI)") as app:
                 )
                 version19 = gr.Radio(
                     label=i18n("版本"),
-                    choices=["v1", "v2"],
+                    choices=["v2"],
                     value="v2",
                     interactive=True,
                     visible=True,
